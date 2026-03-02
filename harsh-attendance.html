@@ -29,7 +29,89 @@
     align-items: center;
     overflow-x: hidden;
   }
-
+/* Password Lock Screen */
+#lock-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--darker);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+#lock-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
+  pointer-events: none;
+}
+.lock-icon { font-size: 3.5rem; animation: pulse 2s infinite; }
+.lock-title {
+  font-family: 'Black Ops One', cursive;
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  background: linear-gradient(135deg, var(--gold), var(--orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 4px;
+  text-align: center;
+}
+.lock-sub { color: var(--muted); font-size: 0.8rem; letter-spacing: 3px; text-transform: uppercase; text-align: center; }
+#pass-input {
+  width: 100%;
+  max-width: 300px;
+  background: var(--card);
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--text);
+  font-family: 'Black Ops One', cursive;
+  font-size: 1.3rem;
+  letter-spacing: 6px;
+  text-align: center;
+  text-transform: uppercase;
+  transition: border-color 0.2s;
+}
+#pass-input:focus { outline: none; border-color: var(--orange); }
+#pass-input.error { border-color: var(--red); animation: shake 0.3s ease; }
+#pass-input.success { border-color: #22c55e; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.btn-unlock {
+  width: 100%;
+  max-width: 300px;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--gold), var(--orange));
+  border: none;
+  border-radius: 8px;
+  font-family: 'Black Ops One', cursive;
+  font-size: 1.1rem;
+  letter-spacing: 4px;
+  color: #000;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(255,107,0,0.3);
+}
+.btn-unlock:hover { box-shadow: 0 4px 30px rgba(255,107,0,0.5); transform: translateY(-1px); }
+.lock-error { color: var(--red); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; height: 1rem; text-align: center; }
+.lock-attempts { color: #444; font-size: 0.75rem; letter-spacing: 2px; text-align: center; }
+<div id="lock-screen">
+  <div class="lock-icon">🔐</div>
+  <div class="lock-title">HARSH ATTENDANCE</div>
+  <div class="lock-sub">Gang Members Only · Enter Password</div>
+  <input id="pass-input" type="password" placeholder="••••" maxlength="10" onkeydown="if(event.key==='Enter') tryUnlock()">
+  <div class="lock-error" id="lock-error"></div>
+  <button class="btn-unlock" onclick="tryUnlock()">🔓 UNLOCK</button>
+  <div class="lock-attempts" id="lock-attempts"></div>
+</div>
+<header>
   /* Scanline overlay */
   body::before {
     content: '';
@@ -630,7 +712,29 @@
   let selfieData = null;
   let selectedMood = null;
   let attendanceLog = JSON.parse(localStorage.getItem('harsh_log') || '[]');
-
+const PASSWORD = 'ORS';
+let attempts = 0;
+if (sessionStorage.getItem('harsh_unlocked') === 'yes') {
+  document.getElementById('lock-screen').style.display = 'none';
+}
+function tryUnlock() {
+  const input = document.getElementById('pass-input');
+  const val = input.value.toUpperCase().trim();
+  attempts++;
+  if (val === PASSWORD) {
+    input.classList.add('success');
+    sessionStorage.setItem('harsh_unlocked', 'yes');
+    setTimeout(() => {
+      document.getElementById('lock-screen').style.display = 'none';
+    }, 400);
+  } else {
+    input.classList.add('error');
+    document.getElementById('lock-error').textContent = '❌ Wrong password bhai';
+    document.getElementById('lock-attempts').textContent = `${attempts} failed attempt${attempts > 1 ? 's' : ''}`;
+    input.value = '';
+    setTimeout(() => input.classList.remove('error'), 500);
+  }
+}
   // Live clock
   function updateClock() {
     const now = new Date();
